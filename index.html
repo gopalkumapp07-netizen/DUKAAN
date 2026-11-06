@@ -486,7 +486,7 @@ select.shopsel{max-width:200px;font-family:var(--f-body);font-size:.8rem;color:v
       <span class="ailogo">🤖</span>
       <div><b>दुकान साथी</b><small>AI · हिन्दी / English</small></div>
     </div>
-    <div class="row" style="gap:.2rem"><button class="btn btn-sm btn-ghost" onclick="A.aiToggleSettings()" title="Sarvam AI">⚙</button>
+    <div class="row" style="gap:.2rem"><button class="btn btn-sm btn-ghost" id="aiVoiceBtn" onclick="A.aiVoiceToggle()" title="आवाज़">🔊</button><button class="btn btn-sm btn-ghost" onclick="A.aiToggleSettings()" title="AI सेटिंग">⚙</button>
     <button class="btn btn-sm btn-ghost" onclick="A.aiClose()">✕</button></div>
   </div>
   <div class="aibody" id="aiBody"></div>
@@ -6689,6 +6689,49 @@ function dailyVeg(limit){
   return limit?out.slice(0,limit):out;
 }
 function brandList(){ var seen={},out=[]; DB.products.forEach(function(p){ if(p.b&&!seen[p.b]){seen[p.b]=1;out.push(p.b);} }); return out.sort(); }
+var SYN=[
+ ["rice","चावल","chawal","बासमती","basmati","அரிசி","బియ్యం","ચોખા","तांदूळ","ಅಕ್ಕಿ","അരി","ਚੌਲ","چاول","চাল","ভাত"],
+ ["wheat","गेहूं","gehun","आटा","atta","flour","ਮੈਦਾ","গম","கோதுமை","గోధుమ","गहू"],
+ ["dal","दाल","daal","pulses","तूर","toor","अरहर","मूंग","moong","चना","chana","मसूर","masoor","ডাল","பருப்பு","పప్పు","डाळ","ದಾಳ","പരിപ്പ്","ਦਾਲ","دال"],
+ ["oil","तेल","tel","सरसों","sarso","mustard","refined","sunflower","सूरजमुखी","তেল","எண்ணெய்","నూనె","तेल","તેલ","ಎಣ್ಣೆ","എണ്ണ","ਤੇਲ","تیل"],
+ ["milk","दूध","doodh","milk","দুধ","பால்","పాలు","दूध","દૂધ","ಹಾಲು","പാൽ","ਦੁੱਧ","دودھ"],
+ ["curd","दही","dahi","curd","yogurt","দই","தயிர்","పెరుగు","दही","દહીં","ಮೊಸರು","തൈര്","ਦਹੀਂ"],
+ ["ghee","घी","ghee","butter","मक्खन","ঘি","நெய்","నెయ్యి","तूप","ઘી","ತುಪ್ಪ","നെയ്യ്","ਘਿਓ"],
+ ["sugar","चीनी","chini","sugar","গুড়","சர்க்கரை","చక్కెర","साखर","ખાંડ","ಸಕ್ಕರೆ","പഞ്ചസാര","ਖੰਡ","چینی"],
+ ["salt","नमक","namak","salt","লবণ","உப்பு","ఉప్పు","मीठ","મીઠું","ಉಪ್ಪು","ഉപ്പ്","ਲੂਣ","نمک"],
+ ["tea","चाय","chai","tea","চা","தேநீர்","టీ","चहा","ચા","ಚಹಾ","ചായ","ਚਾਹ","چائے"],
+ ["onion","प्याज","pyaz","onion","পেঁয়াজ","வெங்காயம்","ఉల్లిపాయ","कांदा","ડુંગળી","ಈರುಳ್ಳಿ","സവാള","ਪਿਆਜ਼","پیاز"],
+ ["potato","आलू","aloo","potato","আলু","உருளைக்கிழங்கு","బంగాళదుంప","बटाटा","બટાકા","ಆಲೂಗಡ್ಡೆ","ഉരുളക്കിഴങ്ങ്","ਆਲੂ","آلو"],
+ ["tomato","टमाटर","tomato","টমেটো","தக்காளி","టమాటా","टोमॅटो","ટામેટા","ಟೊಮೇಟೊ","തക്കാളി","ਟਮਾਟਰ","ٹماٹر"],
+ ["egg","अंडा","अंडे","egg","ডিম","முட்டை","గుడ్డు","अंडी","ઇંડા","ಮೊಟ್ಟೆ","മുട്ട","ਅੰਡਾ","انڈا"],
+ ["chicken","चिकन","मुर्गा","chicken","মুরগি","கோழி","చికెన్","चिकन","ચિકન","ಕೋಳಿ","ചിക്കൻ","ਚਿਕਨ","چکن"],
+ ["fish","मछली","fish","মাছ","மீன்","చేప","मासा","માછલી","ಮೀನು","മത്സ്യം","ਮੱਛੀ","مچھلی"],
+ ["sweet","मिठाई","sweet","মিষ্টি","இனிப்பு","స్వీట్","मिठाई","મીઠાઈ","ಸಿಹಿ","മധുരം","ਮਿਠਾਈ","مٹھائی"],
+ ["soap","साबुन","sabun","soap","সাবান","சோப்பு","సబ్బు","साबण","સાબુ","ಸೋಪು","സോപ്പ്","ਸਾਬਣ","صابن"],
+ ["shampoo","शैम्पू","shampoo","শ্যাম্পু","ஷாம்பூ","షాంపూ","शॅम्पू","શેમ્પૂ","ಶಾಂಪು","ഷാംപൂ","ਸ਼ੈਂਪੂ"],
+ ["masala","मसाला","masala","spice","হলুদ","மசாலா","మసాలా","मसाला","મસાલો","ಮಸಾಲೆ","മസാല","ਮਸਾਲਾ","مصالحہ"],
+ ["sabzi","सब्जी","sabzi","vegetable","সবজি","காய்கறி","కూరగాయ","भाजी","શાકભાજી","ತರಕಾರಿ","പച്ചക്കറി","ਸਬਜ਼ੀ","سبزی"]
+];
+function matchLoose(p,q){
+  if(!q) return false;
+  var hay=(L(p.n)+" "+p.n.hi+" "+p.n.en+" "+p.b+" "+catName(p.c)+" "+L(p.u)+" "+((p.al||[]).join(" "))).toLowerCase();
+  if(hay.indexOf(q)>-1) return true;
+  var toks=String(q).split(/\s+/).filter(function(w){return w.length>=2;});
+  for(var i=0;i<toks.length;i++){ if(hay.indexOf(toks[i])>-1) return true; }
+  return false;
+}
+function matchQuery(p,q){
+  q=String(q||"").toLowerCase().trim();
+  if(!q) return true;
+  var hay=(L(p.n)+" "+p.n.hi+" "+p.n.en+" "+p.b+" "+catName(p.c)+" "+(p.kind?kindLabel(p.kind):"")+" "+L(p.u)+" "+((p.al||[]).join(" "))).toLowerCase();
+  if(hay.indexOf(q)>-1) return true;
+  for(var i=0;i<SYN.length;i++){
+    var g=SYN[i], hit=false;
+    for(var j=0;j<g.length;j++){ if(q.indexOf(g[j])>-1||g[j].indexOf(q)>-1){ hit=true; break; } }
+    if(hit){ for(var k=0;k<g.length;k++){ if(hay.indexOf(g[k])>-1) return true; } }
+  }
+  return matchLoose(p,q);
+}
 function catName(id){ var c=CATS.filter(function(x){return x.id===id;})[0]; return c?L(c.n):id; }
 function dmy(s){ var p=String(s).split("-"); return p.length===3?p[0]+"/"+p[1]+"/"+p[2]:s; }
 function daysLeft(s){ var p=String(s).split("-"); if(p.length!==3) return null;
@@ -7845,8 +7888,24 @@ var A = {
       if(!(DB.ai&&DB.ai.key)) A.aiSay((DB.lang==="hi"?"पूरी बातचीत के लिए Gemini AI जोड़िए —":"For full conversation add Gemini AI — ")+
         ' <button class="btn btn-sm btn-primary" onclick="A.aiToggleSettings()">Gemini key '+(DB.lang==="hi"?"जोड़ें":"add")+'</button>'); },
   aiClose:function(){ var p=document.getElementById("aiPanel"); if(p) p.classList.remove("on"); },
+  aiVoiceToggle:function(){ DB.voiceOn=(DB.voiceOn===false); save();
+    var b=document.getElementById("aiVoiceBtn"); if(b) b.textContent=DB.voiceOn===false?"🔇":"🔊";
+    toast(DB.voiceOn===false?(DB.lang==="hi"?"आवाज़ बंद":"Voice off"):(DB.lang==="hi"?"आवाज़ चालू":"Voice on")); },
+  aiSpeak:function(txt){
+    if(DB.voiceOn===false) return;
+    try{
+      if(!window.speechSynthesis) return;
+      var clean=String(txt).replace(/<[^>]*>/g," ").replace(/&nbsp;/g," ").replace(/\s+/g," ").trim();
+      if(!clean) return;
+      speechSynthesis.cancel();
+      var u=new SpeechSynthesisUtterance(clean.slice(0,220));
+      u.lang=DB.lang==="hi"?"hi-IN":"en-IN"; u.rate=0.95; u.pitch=1;
+      speechSynthesis.speak(u);
+    }catch(e){}
+  },
   aiSay:function(txt,cls){ var b=document.getElementById("aiBody"); if(!b) return;
-    var d=document.createElement("div"); d.className="msg "+(cls||"bot"); d.innerHTML=txt; b.appendChild(d); b.scrollTop=b.scrollHeight; },
+    var d=document.createElement("div"); d.className="msg "+(cls||"bot"); d.innerHTML=txt; b.appendChild(d); b.scrollTop=b.scrollHeight;
+    if((cls||"bot")==="bot") A.aiSpeak(txt); },
   aiSend:function(){ var inp=document.getElementById("aiInput"); if(!inp) return;
     var t=(inp.value||"").trim(); if(!t) return; inp.value="";
     A.aiSay(esc(t),"me"); A.aiReply(t); },
@@ -7960,15 +8019,29 @@ var A = {
     var ctx=hits.map(function(p){var o=bestOffer(p);return L(p.n)+" — "+money(o?o.p:0);}).join("; ");
     var model=ai.model||"gemini-2.0-flash";
     var url=(ai.url||"https://generativelanguage.googleapis.com/v1beta/models/").replace(/\/+$/,"")+"/"+model+":generateContent?key="+encodeURIComponent(ai.key);
-    var sys="You are Dukaan Saathi, the assistant inside दुकान.com, an Indian kirana marketplace. Answer briefly (max 3 sentences) in the user's language. Help with products, prices, coupons (SAVE10, FIRST50, DHAMAKA), order status and khata. Catalogue sample: "+ctx;
+    var sys="You are 'Dukaan Agent', the shopping agent inside दुकान.com, an Indian kirana marketplace. "+
+      "Understand the user's language (Hindi, Hinglish or English) and reply in the same language, briefly (max 2 sentences). "+
+      "You can act for the user: add items to the cart, remove items, search, choose a shop, apply a coupon, open checkout. "+
+      "ALWAYS answer with JSON only, no markdown, in this shape: "+
+      '{"reply":"<what to say to the user>","actions":[{"action":"add","name":"<product>","qty":1}]} '+
+      "Allowed action values: add, remove, search (with query), shop (with shop), coupon (with code), checkout, clear, none. "+
+      "Use [] when no action is needed. Catalogue sample: "+ctx;
     fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({systemInstruction:{parts:[{text:sys}]},contents:[{role:"user",parts:[{text:q}]}],generationConfig:{temperature:0.4,maxOutputTokens:220}})})
+      body:JSON.stringify({systemInstruction:{parts:[{text:sys}]},contents:[{role:"user",parts:[{text:q}]}],generationConfig:{temperature:0.3,maxOutputTokens:300,responseMimeType:"application/json"}})})
       .then(function(r){return r.json();})
       .then(function(j){
-        var txt=(j&&j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts&&j.candidates[0].content.parts[0]&&j.candidates[0].content.parts[0].text)||"";
+        var raw=(j&&j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts||[]).map(function(p){return p.text||"";}).join(" ");
         if(body2&&body2.lastElementChild) body2.lastElementChild.remove();
-        if(txt) A.aiSay(esc(txt).replace(/\n/g,"<br>"));
-        else A.aiSay((DB.lang==="hi"?"Gemini से जवाब नहीं आया: ":"Gemini returned no answer: ")+esc(JSON.stringify(j).slice(0,180)));
+        var data=null;
+        try{ data=JSON.parse(raw.replace(/^```json/i,"").replace(/```$/,"").trim()); }catch(e){}
+        if(data&&data.reply){
+          A.aiSay(esc(data.reply).replace(/\n/g,"<br>"));
+          if(data.actions&&data.actions.length){ A.aiDoActions(data.actions); render(); }
+        } else if(raw){
+          A.aiSay(esc(raw).replace(/\n/g,"<br>"));
+        } else {
+          A.aiSay((DB.lang==="hi"?"AI से जवाब नहीं आया।":"AI returned no answer."));
+        }
       })
       .catch(function(err){
         if(body2&&body2.lastElementChild) body2.lastElementChild.remove();
@@ -8050,6 +8123,27 @@ var A = {
     DB.cart=[]; save(); render();
     A.aiSay((DB.lang==="hi"?"✅ ऑर्डर हो गया! नंबर <b>":"✅ Order placed! Number <b>")+made[0].no+"</b> — "+money(made[0].total)+
       '<br><a href="#track/'+made[0].id+'">'+(DB.lang==="hi"?"ऑर्डर ट्रैक करें":"Track order")+'</a> · <a href="#o/'+made[0].id+'">'+(DB.lang==="hi"?"बिल देखें":"View bill")+'</a>');
+  },
+  aiDoActions:function(acts){
+    if(!acts||!acts.length) return;
+    acts.forEach(function(a){
+      if(!a||!a.action) return;
+      if(a.action==="add"&&a.name){
+        var items=A.chatParseItems((a.qty||1)+" "+a.name);
+        if(items.length){ items[0].qty=Math.max(1,Number(a.qty)||items[0].qty);
+          var c=inCart(items[0].pid,items[0].sid); if(c) c.qty+=items[0].qty; else DB.cart.push({pid:items[0].pid,sid:items[0].sid,qty:items[0].qty});
+          save(); render(); }
+      } else if(a.action==="remove"&&a.name){
+        var it=A.chatParseItems(a.name);
+        if(it.length){ DB.cart=DB.cart.filter(function(c){return c.pid!==it[0].pid;}); save(); render(); }
+      } else if(a.action==="search"&&a.query){ DB.q=a.query; DB.cat="all"; DB.limit=48; save(); }
+      else if(a.action==="shop"&&a.shop){ var sh=DB.shops.filter(function(x){return (x.name.hi+" "+x.name.en).toLowerCase().indexOf(String(a.shop).toLowerCase())>-1;})[0];
+        if(sh){ DB.shopFilter=sh.id; save(); } }
+      else if(a.action==="coupon"&&a.code){ DB.coupon=String(a.code).toUpperCase(); save(); }
+      else if(a.action==="lang"&&a.code){ DB.lang=a.code; save(); }
+      else if(a.action==="clear"){ DB.cart=[]; save(); render(); }
+      else if(a.action==="checkout"){ try{ location.hash="#checkout"; }catch(e){} }
+    });
   },
   aiLocal:function(q){
     var hi=DB.lang==="hi";
